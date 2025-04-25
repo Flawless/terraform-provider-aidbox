@@ -11,12 +11,34 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     services:
+      aidboxdb:
+        image: healthsamurai/aidboxdb:17.0
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aidbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
       aidbox:
         image: healthsamurai/aidboxone:latest
         env:
           AIDBOX_LICENSE: ${{ secrets.AIDBOX_LICENSE }}
           AIDBOX_CLIENT_ID: root
           AIDBOX_CLIENT_SECRET: secret
+          AIDBOX_PORT: 8080
+          AIDBOX_FHIR_VERSION: "4.0.1"
+          BOX_PROJECT_VERSION: 1
+          PGHOST: aidboxdb
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: aidbox
         ports:
           - 8080:8080
         options: >-
