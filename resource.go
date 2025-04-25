@@ -18,7 +18,7 @@ func resourceAidboxResource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"id": {
+			"resource_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -36,15 +36,15 @@ func resourceAidboxResourceCreate(d *schema.ResourceData, meta interface{}) erro
 	client := NewClient(config)
 
 	resourceType := d.Get("resource_type").(string)
-	id := d.Get("id").(string)
+	resourceID := d.Get("resource_id").(string)
 	resource := d.Get("resource").(string)
 
-	err := client.CreateResource(resourceType, id, resource)
+	err := client.CreateResource(resourceType, resourceID, resource)
 	if err != nil {
 		return fmt.Errorf("error creating resource: %w", err)
 	}
 
-	d.SetId(fmt.Sprintf("%s/%s", resourceType, id))
+	d.SetId(fmt.Sprintf("%s/%s", resourceType, resourceID))
 	return resourceAidboxResourceRead(d, meta)
 }
 
@@ -53,9 +53,9 @@ func resourceAidboxResourceRead(d *schema.ResourceData, meta interface{}) error 
 	client := NewClient(config)
 
 	resourceType := d.Get("resource_type").(string)
-	id := d.Get("id").(string)
+	resourceID := d.Get("resource_id").(string)
 
-	resource, err := client.GetResource(resourceType, id)
+	resource, err := client.GetResource(resourceType, resourceID)
 	if err != nil {
 		return fmt.Errorf("error reading resource: %w", err)
 	}
@@ -74,10 +74,10 @@ func resourceAidboxResourceUpdate(d *schema.ResourceData, meta interface{}) erro
 	client := NewClient(config)
 
 	resourceType := d.Get("resource_type").(string)
-	id := d.Get("id").(string)
+	resourceID := d.Get("resource_id").(string)
 	resource := d.Get("resource").(string)
 
-	err := client.UpdateResource(resourceType, id, resource)
+	err := client.UpdateResource(resourceType, resourceID, resource)
 	if err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
@@ -90,9 +90,9 @@ func resourceAidboxResourceDelete(d *schema.ResourceData, meta interface{}) erro
 	client := NewClient(config)
 
 	resourceType := d.Get("resource_type").(string)
-	id := d.Get("id").(string)
+	resourceID := d.Get("resource_id").(string)
 
-	err := client.DeleteResource(resourceType, id)
+	err := client.DeleteResource(resourceType, resourceID)
 	if err != nil {
 		return fmt.Errorf("error deleting resource: %w", err)
 	}

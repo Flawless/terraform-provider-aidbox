@@ -10,6 +10,21 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      aidbox:
+        image: healthsamurai/aidboxone:latest
+        env:
+          AIDBOX_LICENSE: ${{ secrets.AIDBOX_LICENSE }}
+          AIDBOX_CLIENT_ID: root
+          AIDBOX_CLIENT_SECRET: secret
+        ports:
+          - 8080:8080
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,8 +36,16 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: Run tests
-        run: go test -v ./...
+      - name: Run unit tests
+        run: go test -v ./... -run "^Test[^Acc]" -timeout 30s
+
+      - name: Run acceptance tests
+        env:
+          TF_ACC: "1"
+          AIDBOX_URL: "http://localhost:8080"
+          AIDBOX_CLIENT_ID: "root"
+          AIDBOX_CLIENT_SECRET: "secret"
+        run: go test -v ./... -run "^TestAcc" -timeout 10m
 
       - name: Run vet
         run: go vet ./...
