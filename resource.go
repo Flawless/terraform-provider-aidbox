@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -48,6 +50,20 @@ func resourceAidboxResourceCreate(d *schema.ResourceData, meta interface{}) erro
 	return resourceAidboxResourceRead(d, meta)
 }
 
+// filterServerFields removes Aidbox server-generated fields from resource JSON
+func filterServerFields(resource string) (string, error) {
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(resource), &obj); err != nil {
+		return "", err
+	}
+	delete(obj, "meta")
+	if pw, ok := obj["password"].(string); ok && strings.HasPrefix(pw, "$s0$") {
+		delete(obj, "password")
+	}
+	filtered, err := json.Marshal(obj)
+	return string(filtered), err
+}
+
 func resourceAidboxResourceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	client := NewClient(config)
@@ -65,7 +81,11 @@ func resourceAidboxResourceRead(d *schema.ResourceData, meta interface{}) error 
 		return nil
 	}
 
-	d.Set("resource", resource)
+	filtered, err := filterServerFields(resource)
+	if err != nil {
+		return fmt.Errorf("error filtering server fields: %w", err)
+	}
+	d.Set("resource", filtered)
 	return nil
 }
 
