@@ -33,6 +33,23 @@ func resourceAidboxResource() *schema.Resource {
 	}
 }
 
+// validateNoTopLevelFields ensures 'id' and 'resourceType' are not present in resource JSON
+func validateNoTopLevelFields(resource string) error {
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(resource), &obj); err != nil {
+		return fmt.Errorf("invalid resource JSON: %w", err)
+	}
+	for _, field := range []string{"id", "resourceType"} {
+		if _, exists := obj[field]; exists {
+			return fmt.Errorf(
+				"Do not set '%s' inside the resource JSON. Use top-level 'resource_type' and 'resource_id' attributes instead.",
+				field,
+			)
+		}
+	}
+	return nil
+}
+
 func resourceAidboxResourceCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	client := NewClient(config)
@@ -40,6 +57,10 @@ func resourceAidboxResourceCreate(d *schema.ResourceData, meta interface{}) erro
 	resourceType := d.Get("resource_type").(string)
 	resourceID := d.Get("resource_id").(string)
 	resource := d.Get("resource").(string)
+
+	if err := validateNoTopLevelFields(resource); err != nil {
+		return err
+	}
 
 	err := client.CreateResource(resourceType, resourceID, resource)
 	if err != nil {
@@ -57,6 +78,8 @@ func filterServerFields(resource string) (string, error) {
 		return "", err
 	}
 	delete(obj, "meta")
+	delete(obj, "id")
+	delete(obj, "resourceType")
 	if pw, ok := obj["password"].(string); ok && strings.HasPrefix(pw, "$s0$") {
 		delete(obj, "password")
 	}
@@ -90,12 +113,16 @@ func resourceAidboxResourceRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceAidboxResourceUpdate(d *schema.ResourceData, meta interface{}) error {
+	resource := d.Get("resource").(string)
+	if err := validateNoTopLevelFields(resource); err != nil {
+		return err
+	}
+
 	config := meta.(*Config)
 	client := NewClient(config)
 
 	resourceType := d.Get("resource_type").(string)
 	resourceID := d.Get("resource_id").(string)
-	resource := d.Get("resource").(string)
 
 	err := client.UpdateResource(resourceType, resourceID, resource)
 	if err != nil {
