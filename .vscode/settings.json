@@ -1,0 +1,13 @@
+{
+    "go.testEnvVars": {
+        "AIDBOX_URL": "http://localhost:8089",
+        "AIDBOX_CLIENT_ID": "root",
+        "AIDBOX_CLIENT_SECRET": "secret",
+        "TF_ACC": "1"
+    },
+    "go.testFlags": [
+        "-v",
+        "-timeout=10m"
+    ],
+    "go.testTimeout": "10m"
+} 
