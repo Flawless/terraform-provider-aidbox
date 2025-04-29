@@ -17,7 +17,7 @@ func TestResourceAidboxUser(t *testing.T) {
 	}
 
 	// Test required fields
-	requiredFields := []string{"id", "resource"}
+	requiredFields := []string{"name"}
 	for _, field := range requiredFields {
 		if schema[field] == nil {
 			t.Errorf("required field %s is missing", field)
@@ -28,7 +28,7 @@ func TestResourceAidboxUser(t *testing.T) {
 	}
 
 	// Test optional fields
-	optionalFields := []string{"password"}
+	optionalFields := []string{"password", "resource_id", "extensions"}
 	for _, field := range optionalFields {
 		if schema[field] == nil {
 			t.Errorf("optional field %s is missing", field)
@@ -39,7 +39,7 @@ func TestResourceAidboxUser(t *testing.T) {
 	}
 
 	// Test computed fields
-	computedFields := []string{"resource_type", "meta"}
+	computedFields := []string{"id", "resource_type", "meta"}
 	for _, field := range computedFields {
 		if schema[field] == nil {
 			t.Errorf("computed field %s is missing", field)
