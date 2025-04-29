@@ -7,6 +7,7 @@ import (
 	"github.com/flawless/terraform-provider-aidbox/internal/client"
 	"github.com/flawless/terraform-provider-aidbox/internal/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ResourceAidboxAccessPolicy() *schema.Resource {
@@ -14,20 +15,69 @@ func ResourceAidboxAccessPolicy() *schema.Resource {
 
 	// Add access policy-specific schema fields
 	base.AddSchema("engine", &schema.Schema{
-		Type:        schema.TypeString,
-		Required:    true,
-		Description: "The engine for the access policy",
+		Type:     schema.TypeString,
+		Required: true,
+		ValidateFunc: validation.StringInSlice([]string{
+			"json-schema",
+			"allow",
+			"sql",
+			"complex",
+			"matcho",
+			"clj",
+			"matcho-rpc",
+			"allow-rpc",
+			"signed-rpc",
+			"smart-on-fhir",
+		}, false),
+		Description: "The engine for the access policy (json-schema, allow, sql, complex, matcho, clj, matcho-rpc, allow-rpc, signed-rpc, smart-on-fhir)",
 	})
 
-	base.AddSchema("rules", &schema.Schema{
-		Type:        schema.TypeList,
-		Required:    true,
-		Description: "The rules for the access policy",
+	// Schema field for matcho engine
+	base.AddSchema("matcho", &schema.Schema{
+		Type:        schema.TypeMap,
+		Optional:    true,
+		Description: "Matcho engine configuration",
 		Elem: &schema.Schema{
-			Type: schema.TypeMap,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
+			Type: schema.TypeString,
+		},
+	})
+
+	// Schema field for SQL engine
+	base.AddSchema("sql", &schema.Schema{
+		Type:        schema.TypeMap,
+		Optional:    true,
+		Description: "SQL engine configuration",
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+		},
+	})
+
+	// Schema field for JSON Schema engine
+	base.AddSchema("schema", &schema.Schema{
+		Type:        schema.TypeMap,
+		Optional:    true,
+		Description: "JSON Schema engine configuration",
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+		},
+	})
+
+	// Schema field for Complex engine
+	base.AddSchema("and", &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Complex engine AND rules",
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+		},
+	})
+
+	base.AddSchema("or", &schema.Schema{
+		Type:        schema.TypeList,
+		Optional:    true,
+		Description: "Complex engine OR rules",
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
 		},
 	})
 
@@ -51,9 +101,28 @@ func ResourceAidboxAccessPolicy() *schema.Resource {
 			"engine":       d.Get("engine").(string),
 		}
 
-		// Handle rules - directly use the rules as provided
-		if rules := d.Get("rules").([]interface{}); len(rules) > 0 {
-			accessPolicyMap["rules"] = rules
+		// Handle engine-specific configurations
+		engine := d.Get("engine").(string)
+		switch engine {
+		case "matcho":
+			if v, ok := d.GetOk("matcho"); ok {
+				accessPolicyMap["matcho"] = v
+			}
+		case "sql":
+			if v, ok := d.GetOk("sql"); ok {
+				accessPolicyMap["sql"] = v
+			}
+		case "json-schema":
+			if v, ok := d.GetOk("schema"); ok {
+				accessPolicyMap["schema"] = v
+			}
+		case "complex":
+			if v, ok := d.GetOk("and"); ok {
+				accessPolicyMap["and"] = v
+			}
+			if v, ok := d.GetOk("or"); ok {
+				accessPolicyMap["or"] = v
+			}
 		}
 
 		// Add extensions if provided
@@ -91,9 +160,28 @@ func ResourceAidboxAccessPolicy() *schema.Resource {
 			"engine":       d.Get("engine").(string),
 		}
 
-		// Handle rules - directly use the rules as provided
-		if rules := d.Get("rules").([]interface{}); len(rules) > 0 {
-			accessPolicyMap["rules"] = rules
+		// Handle engine-specific configurations
+		engine := d.Get("engine").(string)
+		switch engine {
+		case "matcho":
+			if v, ok := d.GetOk("matcho"); ok {
+				accessPolicyMap["matcho"] = v
+			}
+		case "sql":
+			if v, ok := d.GetOk("sql"); ok {
+				accessPolicyMap["sql"] = v
+			}
+		case "json-schema":
+			if v, ok := d.GetOk("schema"); ok {
+				accessPolicyMap["schema"] = v
+			}
+		case "complex":
+			if v, ok := d.GetOk("and"); ok {
+				accessPolicyMap["and"] = v
+			}
+			if v, ok := d.GetOk("or"); ok {
+				accessPolicyMap["or"] = v
+			}
 		}
 
 		// Add extensions if provided
