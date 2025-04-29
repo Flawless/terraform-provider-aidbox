@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"bytes"
@@ -16,6 +16,13 @@ type Client struct {
 	ClientSecret string
 	HTTPClient   *http.Client
 	accessToken  string
+}
+
+// Config represents the Aidbox client configuration
+type Config struct {
+	URL          string
+	ClientID     string
+	ClientSecret string
 }
 
 // NewClient creates a new Aidbox API client
