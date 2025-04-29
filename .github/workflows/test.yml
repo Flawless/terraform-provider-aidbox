@@ -45,7 +45,7 @@ jobs:
           --health-cmd "curl -f http://localhost:8089/health"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
@@ -54,12 +54,34 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
+          cache: true
 
       - name: Get dependencies
-        run: go mod download
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Wait for Aidbox to be ready
+        run: |
+          timeout 60s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8089/health)" != "200" ]]; do sleep 5; done' || false
+
+      - name: Run linters
+        run: |
+          go vet ./...
+          go fmt ./...
+
+      - name: Run staticcheck
+        uses: dominikh/staticcheck-action@v1.3.0
+        with:
+          version: "2023.1.6"
 
       - name: Run unit tests
-        run: go test -v ./... -run "^Test[^Acc]" -timeout 30s
+        run: |
+          go test -v ./... -run "^Test([^A]|A[^c]|Ac[^c])" -timeout 30s
+
+      - name: Run resource tests
+        run: |
+          go test -v ./resources/... -timeout 30s
 
       - name: Run acceptance tests
         env:
@@ -67,12 +89,5 @@ jobs:
           AIDBOX_URL: "http://localhost:8089"
           AIDBOX_CLIENT_ID: "root"
           AIDBOX_CLIENT_SECRET: "secret"
-        run: go test -v ./... -run "^TestAcc" -timeout 10m
-
-      - name: Run vet
-        run: go vet ./...
-
-      - name: Run staticcheck
-        uses: dominikh/staticcheck-action@v1.3.0
-        with:
-          version: "2023.1.6" 
+        run: |
+          go test -v ./... -run "^TestAcc" -timeout 15m -parallel 1 
